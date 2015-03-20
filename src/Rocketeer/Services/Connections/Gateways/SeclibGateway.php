@@ -10,9 +10,9 @@
 namespace Rocketeer\Services\Connections\Gateways;
 
 use Crypt_RSA;
-use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use League\Flysystem\Filesystem;
 use Net_SFTP;
 use Rocketeer\Interfaces\GatewayInterface;
 use System_SSH_Agent;
@@ -183,7 +183,6 @@ class SeclibGateway implements GatewayInterface
      * Get the authentication object for login.
      *
      * @throws InvalidArgumentException
-     *
      * @return Crypt_RSA|System_SSH_Agent|string
      */
     protected function getAuthForLogin()
@@ -246,7 +245,7 @@ class SeclibGateway implements GatewayInterface
     protected function readRsaKey(array $auth)
     {
         if (isset($auth['key'])) {
-            return $this->files->get($auth['key']);
+            return $this->files->read($auth['key']);
         }
 
         return $auth['keytext'];
