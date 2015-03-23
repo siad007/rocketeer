@@ -9,6 +9,7 @@
  */
 namespace Rocketeer;
 
+use Rocketeer\Services\Credentials\Keys\ConnectionKey;
 use Rocketeer\Traits\HasLocator;
 
 /**
@@ -93,19 +94,20 @@ class Rocketeer
     /**
      * Get an option from Rocketeer's config file.
      *
-     * @param string $option
+     * @param string        $option
+     * @param ConnectionKey $connectionKey
      *
-     * @return string|array|Closure
+     * @return array|Closure|string
      */
-    public function getOption($option)
+    public function getOption($option, ConnectionKey $connectionKey = null)
     {
         $original = $this->config->get($option);
 
-        if ($contextual = $this->getContextualOption($option, 'stages', $original)) {
+        if ($contextual = $this->getContextualOption($option, 'stages', $original, $connectionKey)) {
             return $contextual;
         }
 
-        if ($contextual = $this->getContextualOption($option, 'connections', $original)) {
+        if ($contextual = $this->getContextualOption($option, 'connections', $original, $connectionKey)) {
             return $contextual;
         }
 
@@ -116,23 +118,24 @@ class Rocketeer
      * Get a contextual option.
      *
      * @param string            $option
-     * @param string            $type     [stage,connection]
+     * @param string            $type [stage,connection]
      * @param string|array|null $original
+     * @param ConnectionKey     $connectionKey
      *
-     * @return string|array|\Closure
+     * @return array|\Closure|string
      */
-    protected function getContextualOption($option, $type, $original = null)
+    protected function getContextualOption($option, $type, $original = null, ConnectionKey $connectionKey = null)
     {
-        $current = $this->connections->getCurrentConnection();
+        $connectionKey = $connectionKey ?: $this->connections->getCurrentConnection();
 
         // Switch context
         switch ($type) {
             case 'stages':
-                $contextual = sprintf('on.stages.%s.%s', $current->stage, $option);
+                $contextual = sprintf('on.stages.%s.%s', $connectionKey->stage, $option);
                 break;
 
             case 'connections':
-                $contextual = sprintf('on.connections.%s.%s', $current->name, $option);
+                $contextual = sprintf('on.connections.%s.%s', $connectionKey->name, $option);
                 break;
 
             default:
