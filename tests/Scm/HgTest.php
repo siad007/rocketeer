@@ -10,108 +10,80 @@
 
 namespace Rocketeer\Scm;
 
-use Rocketeer\Abstracts\AbstractBinary;
-use Rocketeer\Interfaces\ScmInterface;
+use Rocketeer\TestCases\RocketeerTestCase;
 
-/**
- * The mercurial implementation of the ScmInterface.
- *
- * @author Siad Ardroumli <siad.ardroumli@gmail.com>
- */
-class Hg extends AbstractBinary implements ScmInterface
+class HgTest extends RocketeerTestCase
 {
     /**
-     * The core binary.
+     * The current SCM instance.
      *
-     * @type string
+     * @type Hg
      */
-    protected $binary = 'hg';
+    protected $scm;
 
-    ////////////////////////////////////////////////////////////////////
-    ///////////////////////////// INFORMATIONS /////////////////////////
-    ////////////////////////////////////////////////////////////////////
-
-    /**
-     * Check if the SCM is available.
-     *
-     * @return string
-     */
-    public function check()
+    public function setUp()
     {
-        return $this->getCommand('--version');
-    }
+        parent::setUp();
 
-    /**
-     * Get the current state.
-     *
-     * @return string
-     */
-    public function currentState()
-    {
-        return $this->identify();
-    }
-
-    /**
-     * Get the current branch.
-     *
-     * @return string
-     */
-    public function currentBranch()
-    {
-        return $this->identify([], '--branch');
+        $this->scm = new Hg($this->app);
     }
 
     ////////////////////////////////////////////////////////////////////
-    /////////////////////////////// ACTIONS ////////////////////////////
+    //////////////////////////////// TESTS /////////////////////////////
     ////////////////////////////////////////////////////////////////////
 
-    /**
-     * Clone a repository.
-     *
-     * @param string $destination
-     *
-     * @return string
-     */
-    public function checkout($destination)
+    public function testCanGetCheck()
     {
-        $arguments = array_map([$this, 'quote'], [
-            $this->connections->getRepositoryEndpoint(),
-            $destination,
-        ]);
+        $command = $this->scm->check();
 
-        // Build flags
-        $flags = ['--branch' => $this->connections->getRepositoryBranch()];
-
-        return $this->clone($arguments, $flags);
+        $this->assertEquals('hg --version', $command);
     }
 
-    /**
-     * Resets the repository.
-     *
-     * @return string
-     */
-    public function reset()
+    public function testCanGetCurrentState()
     {
-        return $this->getCommand('revert', [], ['--all']);
+        $command = $this->scm->currentState();
+
+        $this->assertEquals('hg identify', $command);
     }
 
-    /**
-     * Updates the repository.
-     *
-     * @return string
-     */
-    public function update()
+    public function testCanGetCurrentBranch()
     {
-        return $this->pull([], '--update');
+        $command = $this->scm->currentBranch();
+
+        $this->assertEquals('hg identify --branch', $command);
     }
 
-    /**
-     * Checkout the repository's submodules.
-     *
-     * @return string
-     */
-    public function submodules()
+    public function testCanGetCheckout()
     {
-        return $this->getCommand('update', [], ['-S']);
+        $this->mock('rocketeer.connections', 'ConnectionsHandler', function ($mock) {
+            return $mock
+                ->shouldReceive('getRepositoryEndpoint')->once()->andReturn('http://github.com/my/repository')
+                ->shouldReceive('getRepositoryBranch')->once()->andReturn('develop');
+        });
+
+        $command = $this->scm->checkout($this->server);
+
+        $this->assertEquals('hg clone "http://github.com/my/repository" "'.$this->server.'" --branch="develop"', $command);
+    }
+
+    public function testCanGetReset()
+    {
+        $command = $this->scm->reset();
+
+        $this->assertEquals('hg revert --all', $command);
+    }
+
+    public function testCanGetUpdate()
+    {
+        $command = $this->scm->update();
+
+        $this->assertEquals('hg pull --update', $command);
+    }
+
+    public function testCanGetSubmodules()
+    {
+        $command = $this->scm->submodules();
+
+        $this->assertEquals('hg update -S', $command);
     }
 }
