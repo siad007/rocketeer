@@ -140,7 +140,11 @@ abstract class RocketeerTestCase extends ContainerTestCase
     protected function recreateVirtualServer()
     {
         // Save superglobals
-        $this->home = $_SERVER['HOME'];
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $this->home = $_SERVER['HOMEDRIVE'] . $_SERVER['HOMEPATH'];
+        } else {
+            $this->home = $_SERVER['HOME'];
+        }
 
         // Cleanup files created by tests
         $cleanup = [
