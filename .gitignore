@@ -1,3 +1,6 @@
+# IDE specific
+.idea
+
 # Cache and compiled
 bin/rocketeer.phar
 bin/rocketeer.phar-contents
